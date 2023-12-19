@@ -19,4 +19,4 @@ def game_scene():
         pass # placeholder
 
 if __name__ == "__main__":
-    game_scene
+    game_scene()
