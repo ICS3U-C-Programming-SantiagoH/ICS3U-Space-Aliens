@@ -2,7 +2,7 @@
 
 # Created by: Santiago Hewett
 # Created on: Dec 19
-# This program is the Space Sliens program on the PyBadge
+# This program is the Space Aliens program on the PyBadge
 
 import stage
 import ugame
