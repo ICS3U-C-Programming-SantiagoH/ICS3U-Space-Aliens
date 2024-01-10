@@ -24,7 +24,7 @@ def game_scene():
     select_button = constants.button_state["button_up"]
 
     # get sound ready
-    pew_sound = open("pew.wav", 'rd')
+    pew_sound = open("pew.wav", 'rb')
     sound = ugame.audio
     sound.stop()
     sound.mute(False)
@@ -57,6 +57,26 @@ def game_scene():
     while True:
         # get the user input
         keys = ugame.buttons.get_pressed()
+
+        # A button to fire
+        if keys & ugame.K_O != 0:
+            if a_button == constants.button_state["button_up"]:
+                a_button = constants.button_state["button_just_pressed"]
+            elif a_button == constants.button_state["button_just_pressed"]:
+                a_button = constants.button_state["button_still_pressed"]
+        else:
+            if a_button == constants.button_state["button_still_pressed"]:
+                a_button = constants.button_state["button_released"]
+            else:
+                a_button = constants.button_state["button_up"]
+        
+        # B button
+        if keys & ugame.K_X != 0:
+            pass
+        if keys & ugame.K_START != 0:
+            pass
+        if keys & ugame.K_SELECT != 0:
+            print("Select")
 
 
         if keys & ugame.K_X:
