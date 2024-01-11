@@ -123,10 +123,10 @@ def game_scene():
     # This function is the code to create the main game scene
 
     # Image banks for CircuitPython
-    image_bank_background = stage.Bank.from_bmp16("mt_game_studio.bmp")
+    image_bank_background = stage.Bank.from_bmp16("space_aliens_background.bmp")
     image_bank_sprites = stage.Bank.from_bmp16("space_aliens.bmp")
 
-    # Buttons that keep state information
+    # Buttons that keep state information on
     a_button = constants.button_state["button_up"]
     b_button = constants.button_state["button_up"]
     start_button = constants.button_state["button_up"]
@@ -138,27 +138,32 @@ def game_scene():
     sound.stop()
     sound.mute(False)
 
-    # Set the background to the 0 image from the image bank
+    # Set the background to the 0 image from image bank
     # The size will be (10x8 tiles of size 16x16)
     background = stage.Grid(image_bank_background, constants.SCREEN_GRID_X, constants.SCREEN_GRID_Y)
 
     for x_location in range(constants.SCREEN_GRID_X):
         for y_location in range(constants.SCREEN_GRID_Y):
-            tile_picked = random.randint(1, 10)
+            tile_picked = random.randint(1, 3)
             background.tile(x_location, y_location, tile_picked)
 
     # A sprite that will update every frame with the background
     ship = stage.Sprite(image_bank_sprites, 5, 75, 66)
     alien = stage.Sprite(image_bank_sprites, 9, int(constants.SCREEN_X / 2 - constants.SPRITE_SIZE / 2), 16)
 
+    # Create a list for the laser to shoot
+    lasers = []
+    for laser_number in range(constants.TOTAL_NUMBER_OF_LASERS):
+        a_single_laser = stage.Sprite(image_bank_sprites, 10, constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y)
+        lasers.append(a_single_laser)
+
     # Create the stage for the background to show frames at 60 fps
     game = stage.Stage(ugame.display, constants.FPS)
 
-    # Set the layers, so the item shows up in order
-    game.layers = [ship] + [alien] + [background]
+    # Set the layers, so the items show up in order
+    game.layers = lasers + [ship] + [alien] + [background]
 
     # Render the sprites
-    # Render the game scene once per scene
     game.render_block()
 
     # A forever loop
@@ -180,13 +185,9 @@ def game_scene():
 
         # B button
         if keys & ugame.K_O != 0:
-
-
             pass
-
         if keys & ugame.K_START != 0:
             pass
-
         if keys & ugame.K_SELECT != 0:
             pass
 
@@ -215,12 +216,25 @@ def game_scene():
                 ship.move(ship.x, 120)
 
         # Update the logic of the game
+        # Play pew sound when the button is pressed
         if a_button == constants.button_state["button_just_pressed"]:
-            sound.play(pew_sound)
+            for laser_number in range(len(lasers)):
+                if lasers[laser_number].x < 0:
+                    lasers[laser_number].move(ship.x, ship.y)
+                    sound.play(pew_sound)
+                    break
+
+        # Each frame move lasers that have shot
+        for laser_number in range(len(lasers)):
+            if lasers[laser_number].x > 0:
+                lasers[laser_number].move(lasers[laser_number].x, lasers[laser_number].y - constants.LASER_SPEED)
+                if lasers[laser_number].y < constants.OFF_TOP_SCREEN:
+                    lasers[laser_number].move(constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y)
 
         # Only refresh the sprite
-        game.render_sprites([ship] + [alien])
+        game.render_sprites(lasers + [ship] + [alien])
         game.tick()
+
 
 if __name__ == "__main__":
     splash_scene()
