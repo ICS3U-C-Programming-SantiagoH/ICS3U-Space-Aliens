@@ -9,6 +9,7 @@ import stage
 import ugame
 import random
 import time
+import supervisor
 import constants
 
 
@@ -120,78 +121,96 @@ def splash_scene():
         menu_scene()
 
 def game_scene():
-    # this function is the code create the main game scene
-   
-    # set score
+    # This function is the code to create the main game scene
+
+    # Set score and display
     score = 0
+    score_text = stage.Text(width=29, height=14)
+    score_text.clear()
+    score_text.cursor(0, 0)
+    score_text.move(1, 1)
+    score_text.text(f"Score: {score}")
 
     def show_alien():
-        # take the alien that are off screen and puts them back on
+        # Take the aliens that are off screen and puts them back on
         for alien_number in range(len(aliens)):
             if aliens[alien_number].x < 0:
-                aliens[alien_number].move(random.randint(0 + constants.SPRITE_SIZE,
-                                                         constants.SCREEN_X - constants.SPRITE_SIZE), constants.OFF_TOP_SCREEN)
+                aliens[alien_number].move(
+                    random.randint(
+                        0 + constants.SPRITE_SIZE,
+                        constants.SCREEN_X - constants.SPRITE_SIZE,
+                    ),
+                    constants.OFF_TOP_SCREEN,
+                )
                 break
 
-    # image banks for CircuitPython
+    # Image banks for CircuitPython
     image_bank_background = stage.Bank.from_bmp16("mt_game_studio.bmp")
     image_bank_sprites = stage.Bank.from_bmp16("space_aliens.bmp")
 
-    # buttons that keep state information on
+    # Buttons that keep state information on
     a_button = constants.button_state["button_up"]
     b_button = constants.button_state["button_up"]
     start_button = constants.button_state["button_up"]
     select_button = constants.button_state["button_up"]
 
-    # sound to play
-    pew_sound = open("pew.wav", 'rb')
-    boom_sound = open("boom.wav", 'rb')
+    # Sound to play
+    pew_sound = open("pew.wav", "rb")
+    boom_sound = open("boom.wav", "rb")
+    crash_sound = open("crash.wav", "rb")
     sound = ugame.audio
     sound.stop()
     sound.mute(False)
 
-    # set the background to the 0 image from image bank
-    # the size will be (10x8 tiles of sixe 16x16)
-    background = stage.Grid(image_bank_background,
-                            constants.SCREEN_GRID_X,
-                            constants.SCREEN_GRID_Y)
+    # Set the background to the 0 image from image bank
+    # The size will be (10x8 tiles of size 16x16)
+    background = stage.Grid(
+        image_bank_background, constants.SCREEN_GRID_X, constants.SCREEN_GRID_Y
+    )
 
     for x_location in range(constants.SCREEN_GRID_X):
         for y_location in range(constants.SCREEN_GRID_Y):
             tile_picked = random.randint(3, 14)
             background.tile(x_location, y_location, tile_picked)
 
-    # a sprite that will update every frame with te background
-    ship = stage.Sprite(image_bank_sprites, 5,  75, 66)
+    # A sprite that will update every frame with the background
+    ship = stage.Sprite(image_bank_sprites, 5, 75, 66)
 
-    # list of aliens to have more than 1
+    # List of aliens to have more than 1
     aliens = []
 
     for alien_number in range(constants.TOTAL_NUMBER_OF_ALIENS):
-        a_single_alien = stage.Sprite(image_bank_sprites, 9, constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y)
+        a_single_alien = stage.Sprite(
+            image_bank_sprites, 9, constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y
+        )
         aliens.append(a_single_alien)
 
-    # 1 alien on screen
+    # 1 alien on the screen
     show_alien()
 
-    # create a list for the laser to shoot
+    # Create a list for the laser to shoot
     lasers = []
-    for lazer_number in range(constants.TOTAL_NUMBER_OF_LASERS):
-        a_single_laser = stage.Sprite(image_bank_sprites, 10, constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y)
+
+    for laser_number in range(constants.TOTAL_NUMBER_OF_LASERS):
+        a_single_laser = stage.Sprite(
+            image_bank_sprites, 10, constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y
+        )
         lasers.append(a_single_laser)
-    # create the stage for the background to show
-    # frames at 60 fps
+
+    # Create the stage for the background to show
+    # Frames at 60 fps
     game = stage.Stage(ugame.display, constants.FPS)
 
-    # set the layers, so the item show up in order
-    game.layers = lasers + [ship] + aliens + [background]
-    # render the sprites
-    # render the game scene once per scene
+    # Set the layers, so the items show up in order
+    game.layers = [score_text] + lasers + [ship] + aliens + [background]
+
+    # Render the sprites
+    # Render the game scene once per scene
     game.render_block()
 
-    # a forever loop
+    # A forever loop
     while True:
-        # get the user input
+        # Get the user input
         keys = ugame.buttons.get_pressed()
 
         # A button to shoot
@@ -206,7 +225,8 @@ def game_scene():
             else:
                 a_button = constants.button_state["button_up"]
 
-        # B button
+        # B button, Start button, Select button, and directional buttons logic
+
         if keys & ugame.K_O != 0:
             pass
 
@@ -233,14 +253,15 @@ def game_scene():
                 ship.move(ship.x, ship.y - 1)
             else:
                 ship.move(ship.x, 0)
-                
+
         if keys & ugame.K_DOWN:
             if ship.y <= 120:
                 ship.move(ship.x, ship.y + 1)
             else:
                 ship.move(ship.x, 120)
-        # update the logic of the game
-        # play pew sound when button pressed
+
+        # Update the logic of the game
+        # Play pew sound when button pressed
         if a_button == constants.button_state["button_just_pressed"]:
             for laser_number in range(len(lasers)):
                 if lasers[laser_number].x < 0:
@@ -248,44 +269,115 @@ def game_scene():
                     sound.play(pew_sound)
                     break
 
-        # each frame to move lasers that has shot
+        # Each frame move lasers that have shot
         for laser_number in range(len(lasers)):
             if lasers[laser_number].x > 0:
                 lasers[laser_number].move(lasers[laser_number].x, lasers[laser_number].y - constants.LASER_SPEED)
                 if lasers[laser_number].y < constants.OFF_TOP_SCREEN:
-                    lasers[laser_number].move(constants.OFF_SCREEN_X,
-                                              constants.OFF_SCREEN_Y)
+                    lasers[laser_number].move(constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y)
 
-        # each frame to move lasers that has shot
+        # Each frame move aliens that have shot
         for alien_number in range(len(aliens)):
             if aliens[alien_number].x > 0:
-                aliens[alien_number].move(aliens[alien_number].x,
-                                          aliens[alien_number].y + constants.ALIEN_SPEED)
+                aliens[alien_number].move(aliens[alien_number].x, aliens[alien_number].y + constants.ALIEN_SPEED)
                 if aliens[alien_number].y > constants.SCREEN_Y:
-                    aliens[alien_number].move(constants.OFF_SCREEN_X,
-                                              constants.OFF_SCREEN_Y)
+                    aliens[alien_number].move(constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y)
                     show_alien()
+                    score -= 1
+                    if score < 0:
+                        score = 0
+                    score_text.clear()
+                    score_text.cursor(0, 0)
+                    score_text.move(1, 1)
+                    score_text.text(f"Score: {score}")
 
+        # Within the same function, in the collision detection block
         for laser_number in range(len(lasers)):
             if lasers[laser_number].x > 0:
                 for alien_number in range(len(aliens)):
                     if aliens[alien_number].x > 0:
                         if stage.collide(lasers[laser_number].x, lasers[laser_number].y,
-                                        lasers[laser_number].x + constants.SPRITE_SIZE, lasers[laser_number].y + constants.SPRITE_SIZE,
-                                        aliens[alien_number].x, aliens[alien_number].y,
-                                        aliens[alien_number].x + constants.SPRITE_SIZE, aliens[alien_number].y + constants.SPRITE_SIZE):
-                            # alien was hit
+                                         lasers[laser_number].x + 16, lasers[laser_number].y + 16,
+                                         aliens[alien_number].x, aliens[alien_number].y,
+                                         aliens[alien_number].x + 16, aliens[alien_number].y + 16):
+                            # Alien was hit
                             aliens[alien_number].move(constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y)
                             lasers[laser_number].move(constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y)
                             sound.stop()
                             sound.play(boom_sound)
+                            score += 1
+                            score_text.clear()
+                            score_text.cursor(0, 0)
+                            score_text.move(1, 1)
+                            score_text.text(f"Score: {score}")
                             show_alien()
                             show_alien()
-                            score = score + 1
-        # only refresh the sprite
+
+        for alien_number in range(len(aliens)):
+            if aliens[alien_number].x > 0:
+                if stage.collide(aliens[alien_number].x + 1, aliens[alien_number].y,
+                                 aliens[alien_number].x + 15, aliens[alien_number].y + 15,
+                                 ship.x, ship.y,
+                                 ship.x + 15, ship.y + 15):
+                    # When alien hits ship
+                    sound.stop()
+                    sound.play(crash_sound)
+                    time.sleep(3.0)  # Remove the extra comma
+                    game_over_scene(score)
+
+        # Only refresh the sprite
         game.render_sprites(lasers + [ship] + aliens)
         game.tick()
 
+def game_over_scene(final_score):
+    # The game over function
+
+    # Image bank
+    image_bank_2 = stage.Bank.from_bmp16("mt_game_studio.bmp")
+
+    # Image 0 is background
+    background = stage.Grid(image_bank_2, constants.SCREEN_GRID_X, constants.SCREEN_GRID_Y)
+
+    # Text for background
+    text = []
+    text1 = stage.Text(width=29, height=12, font=None, palette=constants.RED_PALETTE, buffer=None)
+    text1.move(22, 20)
+    text1.text("Final score: {:0>2d}".format(final_score))
+    text.append(text1)
+
+    text2 = stage.Text(width=29, height=12, font=None, palette=constants.RED_PALETTE, buffer=None)
+    text2.move(43, 60)
+    text2.text("GAME OVER")
+    text.append(text2)
+
+    text3 = stage.Text(width=29, height=12, font=None, palette=constants.RED_PALETTE, buffer=None)
+    text3.move(32, 110)
+    text3.text("PRESS SELECT")
+    text.append(text3)
+
+    # Create the stage for the background to show
+    # Frames at 60 fps
+    game = stage.Stage(ugame.display, constants.FPS)
+
+    # Set the layers, so the items show up in order
+    game.layers = text + [background]
+
+    # Render the sprites and background
+    game.render_block()
+
+    # Forever loop
+    while True:
+        # User input
+        keys = ugame.buttons.get_pressed()
+
+        # Check if the SELECT button is pressed
+        if keys & ugame.K_SELECT != 0:
+            # Reload the program (restart the game)
+            supervisor.reload()
+
+        # Update logic of the game and wait for refresh
+        game.tick()
 
 if __name__ == "__main__":
     splash_scene()
+
